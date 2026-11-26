@@ -1,6 +1,8 @@
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env};
+use soroban_sdk::{
+    contract, contracterror, contractevent, contractimpl, contracttype, Address, Env,
+};
 
 const POINTS_PER_KG: u32 = 10;
 
@@ -28,6 +30,14 @@ enum DataKey {
 pub struct Delivery {
     pub kilograms: u32,
     pub points: u32,
+}
+
+#[contractevent(topics = ["delivery"], data_format = "vec")]
+pub struct DeliveryRecorded {
+    #[topic]
+    beneficiary: Address,
+    kilograms: u32,
+    points: u32,
 }
 
 #[contract]
@@ -91,10 +101,12 @@ impl EcoPuntos {
             &Delivery { kilograms, points },
         );
 
-        env.events().publish(
-            (symbol_short!("delivery"), beneficiary),
-            (kilograms, points),
-        );
+        DeliveryRecorded {
+            beneficiary,
+            kilograms,
+            points,
+        }
+        .publish(&env);
 
         Ok(points)
     }
